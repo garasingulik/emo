@@ -88,8 +88,7 @@ const WebcamDetect: React.FC<WebcamDetectProps> = (props) => {
     const video = webcamRef.current
     const canvas = canvasRef.current
     onStartVideoHandle(video, canvas, (results) => {   
-      if (results.length && results[0]) {         
-        console.log(results[0])
+      if (results.length && results[0]) {                 
         setExpression(results[0].expressions)
         setGender(results[0].gender)
         setGenderProbability(results[0].genderProbability)
