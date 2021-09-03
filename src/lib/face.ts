@@ -23,7 +23,10 @@ export const loadModels = async (model: 'mobilenet' | 'tinyface') => {
   network.push(faceapi.loadFaceRecognitionModel(MODELS_PATH))
   network.push(faceapi.loadFaceExpressionModel(MODELS_PATH))
   network.push(faceapi.loadAgeGenderModel(MODELS_PATH))
-  isModelLoaded = true
+
+  await Promise.all(network).then(async () => {
+    isModelLoaded = true
+  })
 }
 
 export const getCurrentFrame = (video) => {

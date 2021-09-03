@@ -6,7 +6,7 @@ import { useRouter } from 'next/router'
 import {
   videoConstraints,
   loadModels,
-  onStartVideoHandle
+  onStartVideoHandle  
 } from '../lib/face'
 
 import styles from './WebcamDetect.module.css'
@@ -30,6 +30,7 @@ const WebcamDetect: React.FC<WebcamDetectProps> = (props) => {
   const [gender, setGender] = useState<string>('unknown')
   const [genderProbability, setGenderProbability] = useState<number>(0)
   const [age, setAge] = useState<number>(0)
+  const [loading, setLoading] = useState<boolean>(true)
 
   useEffect(() => {
     loadModels(currentModel).then(() => {
@@ -49,7 +50,7 @@ const WebcamDetect: React.FC<WebcamDetectProps> = (props) => {
   useEffect(() => {
     if (model && distanceThreshold) {
       setCurrentModel(model)      
-      loadModels(currentModel)
+      loadModels(currentModel)      
     }
   }, [model, distanceThreshold])
 
@@ -74,7 +75,7 @@ const WebcamDetect: React.FC<WebcamDetectProps> = (props) => {
           video.srcObject = mediaStream
           video.onloadedmetadata = function (e) {
             video.play()
-          }
+          }          
         })
         .catch(function (err) {
           console.log(err.name + ': ' + err.message)
@@ -111,20 +112,20 @@ const WebcamDetect: React.FC<WebcamDetectProps> = (props) => {
       })}
       </>
     )
-  }
+  }  
 
   return (
     <Row justify="center" align="middle" gutter={[0, 16]} style={{ paddingTop: '20px' }}>
       <Col>
         <Row align="top" justify="center" gutter={[24, 24]} >
-          <Col xs={18} style={{ overflow: 'hidden'}}>
+          <Col xs={18} style={{ overflow: 'hidden', minWidth: '75%'}}>
             <video onLoadedMetadata={onLoadedMetadata} autoPlay muted playsInline ref={webcamRef} className={styles.webcamFrame}></video>
             <canvas ref={canvasRef} className={styles.detectionOverlay} />
           </Col>
           <Col xs={6}>
             <Space direction="vertical" style={{ width: '100%'}} size="small">
-              <h3 style={{ textAlign: 'center'}}>EMO: Face Detection</h3>
-              <Card title="Gender" bordered={false} style={{ overflow: 'hidden', textAlign: 'center', display: gender ? 'block' : 'none'}}>
+              <h3 style={{ textAlign: 'center', display: gender && gender !== 'unknown' ? 'block' : 'none'}}>EMO: Emotion Detection</h3>
+              <Card title="Gender" bordered={false} style={{ overflow: 'hidden', textAlign: 'center', display: gender && gender !== 'unknown' ? 'block' : 'none'}}>
                 {gender.toUpperCase()} ({genderProbability.toFixed(3)})
               </Card>   
               <Card title="Age" bordered={false} style={{ overflow: 'hidden', textAlign: 'center', display: age > 0 ? 'block' : 'none'}}>

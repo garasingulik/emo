@@ -2,7 +2,9 @@
 .webcamFrame {
   display: block;
   width: 100%;
+  min-width: 1089px;
   max-width: 1280px;
+  min-height: 612px;
   height: auto;
 }
 
