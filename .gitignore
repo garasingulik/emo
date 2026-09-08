@@ -11,9 +11,13 @@
 # next.js
 /.next/
 /out/
-
-# production
 /build
+
+# turbopack
+.turbo
+
+# typescript
+*.tsbuildinfo
 
 # misc
 .DS_Store
@@ -32,3 +36,6 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# local: patch bundle for the feedsbrain/face-api.js fork (not part of the app)
+/.fork-update
