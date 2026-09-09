@@ -1,34 +1,35 @@
-# build environment
-FROM node:14.17.3-buster as build
+# syntax=docker/dockerfile:1
+
+# ---------- build stage ----------
+FROM node:24-bookworm-slim AS build
 WORKDIR /app
 
 ARG APP_VERSION=latest
+ENV NEXT_TELEMETRY_DISABLED=1
 
-ENV PATH /app/node_modules/.bin:$PATH
+# `face-api.js` is installed from a git URL, so git must be present.
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+  && rm -rf /var/lib/apt/lists/*
 
-COPY package.json ./
-COPY package-lock.json ./
-
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 
 COPY . ./
-RUN sed -i 's/development/'$APP_VERSION'/' /app/public/version.json
+RUN sed -i 's/development/'"$APP_VERSION"'/' /app/public/version.json
 RUN npm run build
 
-# production environment
-FROM node:14.17.3-buster-slim
+# ---------- production stage ----------
+FROM node:24-bookworm-slim AS runner
 WORKDIR /app
 
-ENV PATH /app/node_modules/.bin:$PATH
-ENV NODE_ENV production
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY package.json ./
-COPY package-lock.json ./
-
-RUN npm install --production
-
-COPY ./public ./public
+COPY --from=build /app/package.json /app/package-lock.json ./
+COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/.next ./.next
+COPY --from=build /app/public ./public
+COPY --from=build /app/next.config.mjs ./next.config.mjs
 
 EXPOSE 80
-CMD npm run start:prod
+CMD ["npm", "run", "start:prod"]

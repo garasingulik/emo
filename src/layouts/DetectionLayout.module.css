@@ -1,7 +1,28 @@
-.detectionContainer {
-  min-height: 90vh;
+.detectionLayout {
+  /* Fallback for browsers without dynamic viewport units. */
+  height: 100vh;
+  /* dvh follows the visible viewport as mobile browser toolbars show/hide. */
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  /* The page itself never scrolls; children fit the viewport instead. */
+  overflow: hidden;
 }
 
-.detectionFooter {
-  min-height: 5vh;
+.detectionContent {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* antd Row — stretches to fill the content area so its Col has a real height. */
+.detectionContainer {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.detectionCol {
+  display: flex;
+  min-height: 0;
 }

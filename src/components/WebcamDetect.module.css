@@ -1,20 +1,92 @@
+/* Flex chain: every level fills its parent's height so the video box below can
+   resolve `height: 100%` against a real number instead of a magic calc(). */
+.stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.stageCol {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.stageRow {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+.videoCol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Largest 16:9 box that fits the column: height fills the available space,
+   width follows the ratio, and max-width clamps it when the column is the
+   tighter constraint (modern browsers keep the ratio as it clamps). */
+.videoWrap {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 16 / 9;
+  max-width: 100%;
+  margin: auto;
+  line-height: 0;
+}
+
 .cameraFrame,
 .webcamFrame {
   display: block;
   width: 100%;
-  min-width: 1089px;
-  max-width: 1280px;
-  min-height: 612px;
-  height: auto;
+  height: 100%;
 }
 
+/* Fills the same box as the video; face-api sizes the bitmap to the video's
+   getBoundingClientRect(), so 100%/100% here keeps detections aligned. */
 .detectionOverlay {
   position: absolute;
-  top: 0;
-  left: 13px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
-.detectionTest .webcamFrame,
-.detectionTest .cameraFrame {
+/* Side panel keeps a fixed width and scrolls internally if its readouts get
+   taller than the viewport, rather than growing the page. */
+.panelCol {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+/* Pinned to the bottom of the sidebar (replaces the old page footer). */
+.panelFooter {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.detectionTest .videoWrap {
   max-width: 985px;
+}
+
+/* Below this width the side-by-side layout is unusable; stack instead. */
+@media (max-width: 768px) {
+  .stageRow {
+    flex-wrap: wrap;
+  }
+
+  .videoCol,
+  .panelCol {
+    flex: 1 1 100% !important;
+  }
+
+  .videoWrap {
+    height: auto;
+    width: 100%;
+  }
 }
