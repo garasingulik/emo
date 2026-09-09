@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Card, Col, Row, Space } from 'antd'
 
 import { videoConstraints, loadModels, onStartVideoHandle } from '../lib/face'
+import GlobalFooter from './GlobalFooter'
 
 import styles from './WebcamDetect.module.css'
 
@@ -122,21 +123,23 @@ const WebcamDetect: React.FC<WebcamDetectProps> = (props) => {
   }
 
   return (
-    <Row justify="center" align="middle" gutter={[0, 16]} style={{ paddingTop: '20px' }}>
-      <Col>
-        <Row align="top" justify="center" gutter={[24, 24]}>
-          <Col xs={18} style={{ overflow: 'hidden', minWidth: '75%' }}>
-            <video
-              onLoadedMetadata={onLoadedMetadata}
-              autoPlay
-              muted
-              playsInline
-              ref={webcamRef}
-              className={styles.webcamFrame}
-            ></video>
-            <canvas ref={canvasRef} className={styles.detectionOverlay} />
+    <Row justify="center" align="stretch" gutter={[0, 16]} className={styles.stage}>
+      <Col flex="auto" className={styles.stageCol}>
+        <Row align="stretch" justify="center" gutter={[24, 24]} className={styles.stageRow}>
+          <Col flex="auto" className={styles.videoCol}>
+            <div className={styles.videoWrap}>
+              <video
+                onLoadedMetadata={onLoadedMetadata}
+                autoPlay
+                muted
+                playsInline
+                ref={webcamRef}
+                className={styles.webcamFrame}
+              ></video>
+              <canvas ref={canvasRef} className={styles.detectionOverlay} />
+            </div>
           </Col>
-          <Col xs={6}>
+          <Col flex="0 0 300px" className={styles.panelCol}>
             <Space orientation="vertical" style={{ width: '100%' }} size="small">
               <h3
                 style={{
@@ -180,6 +183,9 @@ const WebcamDetect: React.FC<WebcamDetectProps> = (props) => {
                 {renderExpression()}
               </Card>
             </Space>
+            <div className={styles.panelFooter}>
+              <GlobalFooter />
+            </div>
           </Col>
         </Row>
       </Col>

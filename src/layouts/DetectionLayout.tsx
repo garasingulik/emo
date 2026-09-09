@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react'
 import { Col, Layout, Row } from 'antd'
 
-import GlobalFooter from '../components/GlobalFooter'
 import styles from './DetectionLayout.module.css'
 
-const { Footer, Content } = Layout
+const { Content } = Layout
 
 export interface DetectionLayoutProps {
   children: ReactNode
@@ -12,19 +11,14 @@ export interface DetectionLayoutProps {
 
 const DetectionLayout = ({ children }: DetectionLayoutProps) => {
   return (
-    <Layout className="detection">
-      <Content>
-        <Row justify="center" align="middle" className={styles.detectionContainer}>
-          <Col flex="auto">{children}</Col>
-        </Row>
-      </Content>
-      <Footer>
-        <Row justify="center" align="middle" className={styles.detectionFooter}>
-          <Col flex="auto">
-            <GlobalFooter />
+    <Layout className={`detection ${styles.detectionLayout}`}>
+      <Content className={styles.detectionContent}>
+        <Row justify="center" align="stretch" className={styles.detectionContainer}>
+          <Col flex="auto" className={styles.detectionCol}>
+            {children}
           </Col>
         </Row>
-      </Footer>
+      </Content>
     </Layout>
   )
 }
