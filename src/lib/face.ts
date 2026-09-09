@@ -1,4 +1,4 @@
-import * as faceapi from 'face-api.js'
+import * as faceapi from '@feedsbrain/face-api.js'
 import { asyncForEach } from './types'
 
 export const videoConstraints = {
