@@ -7,6 +7,11 @@ regressions bisect cleanly.
 Target versions were "latest as of the migration date": Next **16.3.4**, React
 **19.2**, antd **6.6.3**, Node **24.20.0**, TypeScript **5.9.3**, ESLint **9**.
 
+> **Update (2026-09-09):** the `face-api.js` fork is no longer consumed as a
+> `github:` git URL. It is now the GitHub Packages scoped package
+> `@feedsbrain/face-api.js@^0.22.3`. §1 below is kept as the record of the
+> git-URL attempt; **§1c is the approach that shipped**. See also `SPEC.md` §3.
+
 ## 0. Prep
 
 - `git checkout -b chore/modernize`
@@ -14,7 +19,11 @@ Target versions were "latest as of the migration date": Next **16.3.4**, React
   old native `canvas`/`tfjs-node` toolchain needed it; the browser build doesn't).
 - Delete `node_modules` and `package-lock.json` — the old tree is unresolvable.
 
-## 1. `face-api.js` → the `feedsbrain` fork (git-installable)
+## 1. `face-api.js` → the `feedsbrain` fork (git-installable) — SUPERSEDED by §1c
+
+> Kept for the record. What shipped is the GitHub Packages package in §1c; the
+> git-URL dependency and the committed `build/` output described here were
+> dropped.
 
 The fork is **not published to npm** and does **not commit its build output**, so
 `npm i github:feedsbrain/face-api.js` would install a package whose
@@ -64,6 +73,34 @@ and keeps SHA `7cc8a41`, which the emo `package-lock.json` pins.
   / … and `new faceapi.SsdMobilenetv1Options()` all still work, no
   `tf.setBackend()` call needed.
 - `public/static/models/*` unchanged — same weight format.
+
+### 1c. What shipped — GitHub Packages scoped package
+
+The git-URL route (§1a/§1b) meant committing the fork's ~4.8 MB `build/` output
+and pinning a fork SHA in `package-lock.json`. Instead the fork was **published
+to GitHub Packages** as `@feedsbrain/face-api.js` and consumed as a normal
+semver dependency:
+
+- `package.json`: `"@feedsbrain/face-api.js": "^0.22.3"` (the `face-api.js` key
+  and the `github:` URL are gone).
+- `.npmrc` (committed):
+  ```
+  @feedsbrain:registry=https://npm.pkg.github.com
+  //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+  ```
+  `npm install` / `npm ci` now needs `GITHUB_TOKEN` in the environment with the
+  `read:packages` scope. Nothing else in the install is authenticated.
+- `package-lock.json` resolves it to
+  `https://npm.pkg.github.com/download/@feedsbrain/face-api.js/0.22.3/…` — a
+  tarball, no `hasInstallScript`, no git checkout.
+- **Import path changed:** every `from 'face-api.js'` → `from '@feedsbrain/face-api.js'`
+  (only `src/lib/face.ts` imports it).
+- `src/lib/face.ts` logic is otherwise unchanged — the fork keeps the 0.22.x
+  free-function API (`loadSsdMobilenetv1Model` / `loadFaceLandmarkModel` / … and
+  `new SsdMobilenetv1Options()`), still self-registers a TF.js backend, still no
+  `@tensorflow/tfjs` direct dep.
+- The `./.fork-update/` bundle / `PUSH-INSTRUCTIONS.md` and the "fork commit must
+  be pushed to master" risk are obsolete.
 
 ## 2. React 17 → 19
 
@@ -178,12 +215,19 @@ and keeps SHA `7cc8a41`, which the emo `package-lock.json` pins.
 ## 7. Dockerfile
 
 - Base `node:14.17.3-buster*` → `node:24-bookworm-slim` (build + runtime stages).
-- Build stage: `apt-get install -y --no-install-recommends git` (needed to
-  resolve the `github:` dependency), then `npm ci`.
+- Build stage: `apt-get install -y --no-install-recommends git`, then `npm ci`.
 - Runtime stage: copy `node_modules`, `.next`, `public`, `package*.json`,
   `next.config.mjs` from the build stage; `CMD ["npm", "run", "start:prod"]`
   (still `next start -p 80`). No standalone (see §3).
 - Keep the `sed` line patching `public/version.json`.
+
+> **Stale — not updated for §1c.** The `git` install was for the git-URL
+> dependency and is now dead weight, and `npm ci` in the build stage has no
+> `GITHUB_TOKEN`, so it 401s on `@feedsbrain/face-api.js`. `docker build .`
+> currently fails. Fix: drop the `git` apt install and mount the token as a
+> BuildKit secret —
+> `RUN --mount=type=secret,id=github_token GITHUB_TOKEN=$(cat /run/secrets/github_token) npm ci`
+> — or pass it as a throwaway `--build-arg`. Tracked in `SPEC.md` §9.
 
 ## 8. CI
 
@@ -191,23 +235,30 @@ and keeps SHA `7cc8a41`, which the emo `package-lock.json` pins.
   runs `docker build` on a self-hosted runner, so the Node bump rides along in
   the image.
 
+> Also needs the §1c token wired through (`--secret`/`--build-arg` from an
+> `secrets.GITHUB_TOKEN` / PAT) once the Dockerfile is fixed, or the build fails
+> on the scoped package.
+
 ## 9. Verification — results
 
 | Check | Result |
 | --- | --- |
-| `npm install` | clean, 0 vulnerabilities |
+| `npm install` (with `GITHUB_TOKEN`) | clean, 0 vulnerabilities; `@feedsbrain/face-api.js@0.22.3` from GitHub Packages |
 | `grep -R "babel-plugin-import\|antd-less\|variables.less\|\.babelrc" src` | no hits |
 | `npm run build` | ✅ Next 16 / Turbopack; TypeScript check passes; routes `○ /`, `○ /_not-found`, `ƒ /api/hello` |
 | `npm run lint` | ✅ 0 problems |
 | `npm run dev` | ✅ `GET /` → 200 |
 | `next start` | ✅ `GET /` → 200 (antd CSS-in-JS inlined, footer renders), `GET /api/hello` → 200 `{"name":"John Doe"}` |
-| live webcam / `docker build` | not exercised (no camera / not run this pass) |
+| live webcam | not exercised (no camera) |
+| `docker build` | ❌ blocked — Dockerfile not updated for §1c (no token to `npm ci`); see §7 |
 
 ## 10. Known risk areas
 
-- **The fork commit must be pushed** — `npm ci` pins `feedsbrain/face-api.js`
-  `7cc8a41`; it has to exist on the fork's `master`. `./.fork-update/` has the
-  bundle, patch, and instructions.
+- **~~The fork commit must be pushed~~** — obsolete. Replaced by §1c: the fork is
+  on GitHub Packages as `@feedsbrain/face-api.js@^0.22.3`; installs need
+  `GITHUB_TOKEN` (`read:packages`). `./.fork-update/` is no longer relevant.
+- **Docker / CI build is broken** until the Dockerfile forwards `GITHUB_TOKEN`
+  to `npm ci` — see §7.
 - **antd 6 major** — only the props above were touched; a wider audit wasn't done
   since the app's antd usage is small (`Row`/`Col`/`Space`/`Card`/`Layout`).
 - **`react-hooks@7` errors** — the `WebcamDetect` refactor (§2) is behaviour-
